@@ -1,0 +1,6 @@
+pyserial
+matplotlib
+scikit-learn
+scipy
+numpy
+opencv-python
