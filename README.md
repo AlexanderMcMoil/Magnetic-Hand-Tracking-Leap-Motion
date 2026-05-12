@@ -12,3 +12,4 @@ cd leapc-python-bindings
 pip install -r requirements.txt
 pip install -e leapc-python-api
 ```
+Arduino code is in magnetism_tracking folder
