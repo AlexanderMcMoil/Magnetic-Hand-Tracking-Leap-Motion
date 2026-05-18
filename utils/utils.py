@@ -23,7 +23,7 @@ data_num = ring_num*receiver_num
 
 arduino_port = "COM3"
 baud_rate = 115200
-webcam_ip_address = "10.4.36.183"
+webcam_ip_address = "10.4.105.163"
 webcam_port = "4747"
 webcam_url = f"http://{webcam_ip_address}:{webcam_port}/video"
 
@@ -390,7 +390,7 @@ def get_arduino_values(ser:serial.Serial) -> np.ndarray:
     input = ser.read_until(b"\n").decode("utf-8").strip()
     input = input.split()
     input = list(map(int, input))
-    # data = np.reshape(input, (5,4))
+    
     return np.array(input)
 
 # def webcam_setup(flashlight=False, autofocus=False):

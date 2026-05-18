@@ -12,8 +12,8 @@ import numpy as np
 import cv2
 import threading
 
-arduino_port = "COM3"
-baud_rate = 115200
+# arduino_port = "COM3"
+# baud_rate = 115200
 
 latest_hand = None
 data_lock = threading.Lock()

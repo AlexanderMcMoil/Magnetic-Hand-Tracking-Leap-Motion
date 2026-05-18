@@ -2,34 +2,9 @@ from utils.utils import *
 from sklearn import tree
 import serial
 import matplotlib.pyplot as plt
-import pybullet as p
-import pybullet_data
+# import pybullet as p
+# import pybullet_data
 from sklearn import preprocessing, linear_model, neural_network, metrics, pipeline
-
-# port = "COM18"
-# baud_rate = 115200
-
-
-def display_hand_angles(robot_id, angles):
-    # angles_bullet = np.concatenate([[0], [0.5, 0], angles[1:3], [0], angles[3:6], [0], angles[6:9], [0], angles[9:12], [0], angles[12:]])
-    # print(angles_bullet.__len__())
-    angles_bullet = np.radians(angles)
-    p.setJointMotorControlArray(robot_id, jointIndices=range(21), controlMode=p.POSITION_CONTROL, targetPositions=angles_bullet)
-    for i in range(50):
-        p.stepSimulation()
-    return
-
-# def train_model():
-#     data = np.genfromtxt("./datasets/test/index_test.txt", delimiter=",")
-#     # print(data.shape)
-#     magnet_values = data[:,:20]
-#     # print(magnet_values.shape)
-#     angles = data[:,20:]
-#     x = magnet_values[:,magnet_value_indices["index"]]
-#     y = angles[:,[finger_angle_indices["index_mcp"], finger_angle_indices["index_dip"]]]
-#     model = tree.DecisionTreeRegressor()
-#     model.fit(x, y)
-#     return model
 
 def main():
     # cap = cv2.VideoCapture(0)
@@ -39,56 +14,19 @@ def main():
     # fig = plt.figure(1)
     time.sleep(2)
     # names = ["index_mcp", "index_pip"]
-    physicsClient = p.connect(p.GUI)  # or p.DIRECT for non-graphical mode
-    p.setAdditionalSearchPath(pybullet_data.getDataPath())
-    urdf_path = "./modelling/human_hand-master/human_hand-master/model/meshes/human_hand_scaled.urdf"
-    robot_id = p.loadURDF(urdf_path, [0, 0, 0], useFixedBase=1)
-    p.resetDebugVisualizerCamera(cameraDistance=1, cameraYaw=0, cameraPitch=-48, cameraTargetPosition=[-0.5,0,0])
     finger = "thumb"
     # model = train_model(finger)
     model = train_generic_hand_model()
-    # plot = Fast_Magnet_Display()
-    # try:
-    show_video = True
-    
-    cap = VideoCapture(webcam_url)
-    # except:
-    #     print("No camera detected. Continuing without video feed.")
-    #     show_video = False
-
     while True:
         # __, frame = cap.read()
         magnet_values = get_arduino_values(ser)
-        # print("1")
-        # print(f'Magnet Values{magnet_values[magnet_value_indices[finger]]}')
-        # prediction = model.predict(magnet_values[magnet_value_indices[finger]].reshape([1,-1])).flatten()
-
-        # index_angles = model.predict(magnet_values_all[frame_num, magnet_value_indices["index"]].reshape(1, -1)).flatten()
-        # index_angles = np.hstack([prediction, [prediction[1] * 0.78]]) * rad2deg
-        # angles = np.zeros([15])
-        # angles[0:3] = index_angles
-        frame = cap.read()
-        # print("2")
         angles = model.predict(magnet_values.reshape([1,-1])).flatten() * rad2deg
-        # print("3")
-        # print(angles)
         angles_bullet = np.concatenate([[angles[15]], [angles[0]], [0], 2*angles[1:3], [0], angles[3:6], [0], angles[6:9], [0], angles[9:12], [0], angles[12:15]])
-        display_hand_angles(robot_id=robot_id, angles=angles_bullet)
-        # print("4")
-        # plot.update(magnet_values)
-        # cv2.imshow("Real Time", frame)
-        time.sleep(0.05)
-        cv2.imshow("win", frame)
-        key = cv2.waitKey(1)    
-        if key == ord('q'):
-            break
-    # except Exception as e:
-    #     print(e)
-    # finally:
-    p.disconnect()
-    ser.close()
-
     return
+
+def train_model():
+
+    pass
 
 def train_generic_hand_model():
     # thumb_dataset = 0

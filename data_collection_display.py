@@ -26,7 +26,7 @@ def display_hand_angles(robot_id, angles):
 
 def main(finger:str=None):
     # cap = VideoCapture(0)
-    # ser = serial.Serial(port=arduino_port, baudrate=baud_rate)
+    ser = serial.Serial(port=arduino_port, baudrate=baud_rate)
 
     physicsClient = p.connect(p.GUI)  # or p.DIRECT for non-graphical mode
     p.setAdditionalSearchPath(pybullet_data.getDataPath())
@@ -50,7 +50,7 @@ def main(finger:str=None):
     print("  f: Toggle hands format between Skeleton/Dots")
 
     tracking_listener = TrackingListener(canvas)
-    file_name = "./datasets/all_fingers_5.txt"
+    file_name = "./datasets/all_fingers_7.txt"
     file = open(file_name, "w")
 
     connection = leap.Connection()
@@ -71,12 +71,15 @@ def main(finger:str=None):
                 if hands is not None and len(hands) > 0:
                     try:
                         if (np.round(prev_hand_pos, 3) != np.round(list(hands[0].palm.position), 3)).all():
-                            
+                            magnet_values = get_arduino_values(ser)
                             angles = get_angles(hands[0])
+
+                            data = np.concatenate([magnet_values.flatten(), angles])
+
                             angles_bullet = np.concatenate([[angles[15]], [angles[0]], [0], 2*angles[1:3], [0], angles[3:6], [0], angles[6:9], [0], angles[9:12], [0], angles[12:15]])
-                            # data = np.concatenate([magnet_values.flatten(), angles])
                             display_hand_angles(robot_id=robot_id, angles=angles_bullet)
                             prev_hand_pos = list(hands[0].palm.position)
+                            
                             if record_data and angles[finger_angle_indices["index_mcp"]] != -1:
                                 print(angles)
                                 file.write(np.array2string(data.flatten(), max_line_width=100000, separator=",").replace(" ", "")[1:-1] + "\n")
