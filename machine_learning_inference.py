@@ -50,8 +50,11 @@ def main():
     # plot = Fast_Magnet_Display()
     # try:
     show_video = True
-    
-    cap = VideoCapture(webcam_url)
+    try:
+        cap = VideoCapture(webcam_url)
+    except:
+        print("No camera detected. Continuing without video feed.")
+        show_video = False
     # except:
     #     print("No camera detected. Continuing without video feed.")
     #     show_video = False
@@ -78,10 +81,11 @@ def main():
         # plot.update(magnet_values)
         # cv2.imshow("Real Time", frame)
         time.sleep(0.05)
-        cv2.imshow("win", frame)
-        key = cv2.waitKey(1)    
-        if key == ord('q'):
-            break
+        if show_video:
+            cv2.imshow("win", frame)
+            key = cv2.waitKey(1)    
+            if key == ord('q'):
+                break
     # except Exception as e:
     #     print(e)
     # finally:
@@ -102,12 +106,14 @@ def train_generic_hand_model():
     }
     fingers = ["thumb","index","middle","ring", "pinky"]
     thumb_dataset = np.genfromtxt("./datasets/thumb2.txt", delimiter=',')
-    finger_dataset = np.genfromtxt("./datasets/all_fingers_7.txt", delimiter=',')
+    finger_dataset = np.genfromtxt("./datasets/all_fingers_8.txt", delimiter=',')
     wrist_dataset = np.genfromtxt("./datasets/wrist.txt", delimiter=',')
-    from scipy.signal import savgol_filter
+    # from scipy.signal import savgol_filter
     print(finger_dataset.shape)
-    x_finger = finger_dataset[:,:24]
-    y_finger = finger_dataset[:,24:]
+    np.random.shuffle(finger_dataset)
+    cutoff = int(finger_dataset.shape[0])
+    x_finger = finger_dataset[:cutoff,:24]
+    y_finger = finger_dataset[:cutoff,24:]
     x_wrist = wrist_dataset[:,:24]
     y_wrist = wrist_dataset[:,24:]
 
@@ -165,12 +171,20 @@ def train_generic_hand_model():
     # model.models["pinky"] = load_model(f"pinky4")
     # model.models["wrist"] = load_model(f"wrist")
     
+    # specific_neural_networks = {
+    #     "thumb": "thumb2",
+    #     "index": "index4",
+    #     "middle": "middle6",
+    #     "ring": "ring5",
+    #     "pinky": "pinky4",
+    #     "wrist": "wrist",
+    # }
     specific_neural_networks = {
         "thumb": "thumb2",
-        "index": "index4",
-        "middle": "middle6",
-        "ring": "ring5",
-        "pinky": "pinky4",
+        "index": "train",
+        "middle": "train",
+        "ring": "train",
+        "pinky": "train",
         "wrist": "wrist",
     }
     for finger, name in specific_neural_networks.items():

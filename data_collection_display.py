@@ -50,7 +50,7 @@ def main(finger:str=None):
     print("  f: Toggle hands format between Skeleton/Dots")
 
     tracking_listener = TrackingListener(canvas)
-    file_name = "./datasets/all_fingers_7.txt"
+    file_name = "./datasets/all_fingers_9.txt"
     file = open(file_name, "w")
 
     connection = leap.Connection()

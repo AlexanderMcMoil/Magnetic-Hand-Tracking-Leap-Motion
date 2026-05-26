@@ -67,8 +67,9 @@ def record_data(filename:str, connection:leap.Connection, duration:float=30, ser
         file.close()
     pass
 
-def train_model():
+def train_model(specific_neural_networks: dict = None, dataset_name: str = None):
     # thumb_dataset = 0
+    
     models = {
         "thumb":    pipeline.Pipeline([("scaling", preprocessing.MinMaxScaler()),("clf", neural_network.MLPRegressor([200, 200, 200], activation='relu', learning_rate_init=0.01, max_iter=1000))]),
         "index":    pipeline.Pipeline([("scaling", preprocessing.MinMaxScaler()),("clf", neural_network.MLPRegressor([200, 200, 200], activation='relu', learning_rate_init=0.01, max_iter=1000))]),
@@ -79,36 +80,27 @@ def train_model():
     }
     fingers = ["thumb","index","middle","ring", "pinky"]
     thumb_dataset = np.genfromtxt("./datasets/thumb2.txt", delimiter=',')
-    finger_dataset = np.genfromtxt("./datasets/all_fingers_7.txt", delimiter=',')
+    finger_dataset = np.genfromtxt("./datasets/all_fingers_8.txt", delimiter=',')
     wrist_dataset = np.genfromtxt("./datasets/wrist.txt", delimiter=',')
-    from scipy.signal import savgol_filter
-    print(finger_dataset.shape)
     x_finger = finger_dataset[:,:24]
     y_finger = finger_dataset[:,24:]
-    x_wrist = wrist_dataset[:,:24]
-    y_wrist = wrist_dataset[:,24:]
     
     y_finger = np.radians(y_finger)
-    y_wrist = np.radians(y_wrist)
 
     model = Generic_Hand_Model(models)
+    if specific_neural_networks is None:
+        specific_neural_networks = {
+            "thumb": "thumb2",
+            "index": "index4",
+            "middle": "middle6",
+            "ring": "ring5",
+            "pinky": "pinky4",
+            "wrist": "wrist",
+        }
     
-    specific_neural_networks = {
-        "thumb": "thumb2",
-        "index": "index4",
-        "middle": "middle6",
-        "ring": "ring5",
-        "pinky": "pinky4",
-        "wrist": "wrist",
-    }
     for finger, name in specific_neural_networks.items():
         if name == "train":
-            if finger == "wrist":
-                model.fit_finger(x_wrist, y_wrist, finger)
-            elif finger == "thumb":
-                model.fit_finger(thumb_dataset[:,:data_num], np.radians(thumb_dataset[:,data_num:]), finger)
-            else:
-                model.fit_finger(x_finger, y_finger, finger)
+            model.fit_finger(x_finger, y_finger, finger)
         else:
             model.models[finger] = load_model(name)
     return model
@@ -178,12 +170,21 @@ def control_loop(ser_hand_tracking: serial.Serial, ser_fes: serial.Serial, model
     pass
 
 if __name__ == "__main__":
-    ser_hand_tracking = serial.Serial(port=arduino_port, baudrate=baud_rate)
-    ser_fes = serial.Serial(port=port_fes, baudrate=baud_rate)
-    ideal_parameters = np.array([500, 50, 5, 5])
-    model = train_model()
-    extension_angles = calibrate_goal(ser_hand_tracking, ser_fes, model, ideal_parameters=ideal_parameters)
-    control_loop(ser_hand_tracking, ser_fes, model, ideal_parameters, extension_angles)
+    specific_neural_networks = {
+        "thumb": "thumb2",
+        "index": "train",
+        "middle": "train",
+        "ring": "train",
+        "pinky": "train",
+        "wrist": "wrist",
+    }
+    # ser_hand_tracking = serial.Serial(port=arduino_port, baudrate=baud_rate)
+    # ser_fes = serial.Serial(port=port_fes, baudrate=baud_rate)
+    # ideal_parameters = np.array([500, 50, 5, 5])
+    model = train_model(specific_neural_networks)
+
+    # extension_angles = calibrate_goal(ser_hand_tracking, ser_fes, model, ideal_parameters=ideal_parameters)
+    # control_loop(ser_hand_tracking, ser_fes, model, ideal_parameters, extension_angles)
 
     # record_data(filename="data_collection/data.csv", connection=leap.Connection(), duration=30, ser=None)
 

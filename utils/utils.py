@@ -23,7 +23,7 @@ data_num = ring_num*receiver_num
 
 arduino_port = "COM3"
 baud_rate = 115200
-webcam_ip_address = "10.4.105.163"
+webcam_ip_address = "10.4.125.93"
 webcam_port = "4747"
 webcam_url = f"http://{webcam_ip_address}:{webcam_port}/video"
 
@@ -68,6 +68,15 @@ finger_angle_indices = {
     "pinky_pip": 13,
     "pinky_dip": 14,
     "wrist": 15,
+}
+
+finger_angles = {
+    "thumb": [finger_angle_indices["thumb_mcp"], finger_angle_indices["thumb_pip"], finger_angle_indices["thumb_dip"]],
+    "index": [finger_angle_indices["index_mcp"], finger_angle_indices["index_pip"], finger_angle_indices["index_dip"]],
+    "middle": [finger_angle_indices["middle_mcp"], finger_angle_indices["middle_pip"], finger_angle_indices["middle_dip"]],
+    "ring": [finger_angle_indices["ring_mcp"], finger_angle_indices["ring_pip"], finger_angle_indices["ring_dip"]],
+    "pinky": [finger_angle_indices["pinky_mcp"], finger_angle_indices["pinky_pip"], finger_angle_indices["pinky_dip"]],
+    "wrist": [finger_angle_indices["wrist"]]
 }
 
 _TRACKING_MODES = {
@@ -311,15 +320,25 @@ class Generic_Hand_Model():
     def fit_finger(self, x, y, finger):
         # print(y)
         # print(y[:,[15]])
+        random_state = np.random.get_state()
+        np.random.shuffle(x)
+        np.random.set_state(random_state)
+        np.random.shuffle(y)
+        cutoff = int(x.shape[0]*0.8)
+        x_train = x[:cutoff,:]
+        y_train = y[:cutoff,:]
+        x_test = x[cutoff:,:]
+        y_test = y[cutoff:,:]
         y_finger = y[:,self.finger_angle_indices[finger]][:,:]
         if finger == "wrist":
-            y_finger = y[:,self.finger_angle_indices[finger]][:,:]
+            y_finger = y_train[:,self.finger_angle_indices[finger]][:,:]
         else:
-            y_finger = y[:,self.finger_angle_indices[finger]][:,:-1]
+            y_finger = y_train[:,self.finger_angle_indices[finger]][:,:-1]
 
-        self.models[finger].fit(x[:,magnet_value_indices[finger]],y_finger)
-        predictions = self.models[finger].predict(x[:,magnet_value_indices[finger]])
-        print(f"{finger} error: {metrics.mean_squared_error(y_finger, predictions)}")
+        self.models[finger].fit(x_train[:,magnet_value_indices[finger]],y_finger)
+        predictions = self.models[finger].predict(x_test[:,magnet_value_indices[finger]])
+        predictions = np.hstack([predictions, predictions[:, [1]] * self.joint_ratios[self.fingers.index(finger)]]) if finger != "wrist" else predictions
+        print(f"{finger} error: {np.abs(y_test[:,self.finger_angle_indices[finger]] - predictions).mean(axis=0)*rad2deg}")
         save_model(self.models[finger], f"{finger}")
 
     def predict(self, data):
@@ -333,7 +352,7 @@ class Generic_Hand_Model():
                 # finger = "ring" if finger == "pinky" else finger
                 prediction = self.models[finger].predict(data[:,magnet_value_indices[finger]])
                 if finger == "wrist":
-                    prediction = prediction.reshape([1,-1])
+                    prediction = prediction.reshape([-1,1])
                 else:
                     prediction = np.hstack([prediction, prediction[:, [1]] * self.joint_ratios[i]])
                 # prediction[:,0] -= 15 * deg2rad
@@ -343,6 +362,8 @@ class Generic_Hand_Model():
                     pass
                     
                 # print(prediction)
+            print(result)
+            print(result.shape)
             result = np.hstack([result, prediction])
         return result
 
