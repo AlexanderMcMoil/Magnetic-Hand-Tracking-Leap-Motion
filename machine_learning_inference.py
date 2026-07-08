@@ -49,12 +49,13 @@ def main():
     model = train_generic_hand_model()
     # plot = Fast_Magnet_Display()
     # try:
-    show_video = True
-    try:
-        cap = VideoCapture(webcam_url)
-    except:
-        print("No camera detected. Continuing without video feed.")
-        show_video = False
+    show_video = False
+    if show_video:
+        try:
+            cap = VideoCapture(webcam_url)
+        except:
+            print("No camera detected. Continuing without video feed.")
+            show_video = False
     # except:
     #     print("No camera detected. Continuing without video feed.")
     #     show_video = False
@@ -70,7 +71,8 @@ def main():
         # index_angles = np.hstack([prediction, [prediction[1] * 0.78]]) * rad2deg
         # angles = np.zeros([15])
         # angles[0:3] = index_angles
-        frame = cap.read()
+        if show_video:
+            frame = cap.read()
         # print("2")
         angles = model.predict(magnet_values.reshape([1,-1])).flatten() * rad2deg
         # print("3")
@@ -97,17 +99,17 @@ def main():
 def train_generic_hand_model():
     # thumb_dataset = 0
     models = {
-        "thumb":    pipeline.Pipeline([("scaling", preprocessing.MinMaxScaler()),("clf", neural_network.MLPRegressor([200, 200, 200], activation='relu', learning_rate_init=0.01, max_iter=1000))]),
-        "index":    pipeline.Pipeline([("scaling", preprocessing.MinMaxScaler()),("clf", neural_network.MLPRegressor([200, 200, 200], activation='relu', learning_rate_init=0.01, max_iter=1000))]),
-        "middle":   pipeline.Pipeline([("scaling", preprocessing.MinMaxScaler()),("clf", neural_network.MLPRegressor([200, 200, 200], activation='relu', learning_rate_init=0.01, max_iter=1000))]),
-        "ring":     pipeline.Pipeline([("scaling", preprocessing.MinMaxScaler()),("clf", neural_network.MLPRegressor([200, 200, 200], activation='relu', learning_rate_init=0.01, max_iter=1000))]),
-        "pinky":    pipeline.Pipeline([("scaling", preprocessing.MinMaxScaler()),("clf", neural_network.MLPRegressor([200, 200, 200], activation='relu', learning_rate_init=0.01, max_iter=1000))]),
-        "wrist":    pipeline.Pipeline([("scaling", preprocessing.MinMaxScaler()),("clf", neural_network.MLPRegressor([200, 200, 200], activation='relu', learning_rate_init=0.01, max_iter=1000))]),
+        "thumb":    pipeline.Pipeline([("scaling", preprocessing.MinMaxScaler()),("clf", neural_network.MLPRegressor([200, 200, 200], activation='relu', learning_rate_init=0.001, max_iter=5000, validation_fraction=0.125, tol=1e-4))]),
+        "index":    pipeline.Pipeline([("scaling", preprocessing.MinMaxScaler()),("clf", neural_network.MLPRegressor([200, 200, 200], activation='relu', learning_rate_init=0.001, max_iter=5000, validation_fraction=0.125, tol=1e-4))]),
+        "middle":   pipeline.Pipeline([("scaling", preprocessing.MinMaxScaler()),("clf", neural_network.MLPRegressor([200, 200, 200], activation='relu', learning_rate_init=0.001, max_iter=5000, validation_fraction=0.125, tol=1e-4))]),
+        "ring":     pipeline.Pipeline([("scaling", preprocessing.MinMaxScaler()),("clf", neural_network.MLPRegressor([200, 200, 200], activation='relu', learning_rate_init=0.001, max_iter=5000, validation_fraction=0.125, tol=1e-4))]),
+        "pinky":    pipeline.Pipeline([("scaling", preprocessing.MinMaxScaler()),("clf", neural_network.MLPRegressor([200, 200, 200], activation='relu', learning_rate_init=0.001, max_iter=5000, validation_fraction=0.125, tol=1e-4))]),
+        "wrist":    pipeline.Pipeline([("scaling", preprocessing.MinMaxScaler()),("clf", neural_network.MLPRegressor([200, 200, 200], activation='relu', learning_rate_init=0.001, max_iter=5000, validation_fraction=0.125, tol=1e-4))]),
     }
     fingers = ["thumb","index","middle","ring", "pinky"]
-    thumb_dataset = np.genfromtxt("./datasets/thumb2.txt", delimiter=',')
-    finger_dataset = np.genfromtxt("./datasets/all_fingers_8.txt", delimiter=',')
-    wrist_dataset = np.genfromtxt("./datasets/wrist.txt", delimiter=',')
+    thumb_dataset = np.genfromtxt("./datasets/thumb_Yun.txt", delimiter=',')
+    finger_dataset = np.genfromtxt("./datasets/all_fingers_Yun.txt", delimiter=',')
+    wrist_dataset = np.genfromtxt("./datasets/wrist_Yun.txt", delimiter=',')
     # from scipy.signal import savgol_filter
     print(finger_dataset.shape)
     np.random.shuffle(finger_dataset)
@@ -171,22 +173,23 @@ def train_generic_hand_model():
     # model.models["pinky"] = load_model(f"pinky4")
     # model.models["wrist"] = load_model(f"wrist")
     
+    specific_neural_networks = {
+        "thumb": "train",
+        "index": "index",
+        "middle": "middle",
+        "ring": "ring",
+        "pinky": "pinky",
+        "wrist": "train",
+    }
     # specific_neural_networks = {
-    #     "thumb": "thumb2",
-    #     "index": "index4",
-    #     "middle": "middle6",
-    #     "ring": "ring5",
-    #     "pinky": "pinky4",
+    #     "thumb": "thumb",
+    #     "index": "index",
+    #     "middle": "middle",
+    #     "ring": "ring",
+    #     "pinky": "pinky",
     #     "wrist": "wrist",
     # }
-    specific_neural_networks = {
-        "thumb": "thumb2",
-        "index": "train",
-        "middle": "train",
-        "ring": "train",
-        "pinky": "train",
-        "wrist": "wrist",
-    }
+
     for finger, name in specific_neural_networks.items():
         if name == "train":
             if finger == "wrist":
@@ -201,5 +204,7 @@ def train_generic_hand_model():
 
 
 if __name__ == "__main__":
-    main()
+    # main()
+    for i in range(5):
+        train_generic_hand_model()
     pass

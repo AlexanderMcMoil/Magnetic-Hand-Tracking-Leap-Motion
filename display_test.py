@@ -120,7 +120,7 @@ def main():
                 if current_hand:
                     get_angles(current_hand)
                     # print(current_hand.confidence)
-                    # draw_hand(ax, current_hand)
+                    draw_hand(ax, current_hand)
                     # plt.pause(0.001) # Small pause to allow the GUI to update
                     print(f"Frame duration: {(time.time() - frame_time):.2f}")
                     frame_time = time.time()

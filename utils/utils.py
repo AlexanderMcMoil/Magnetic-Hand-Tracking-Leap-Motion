@@ -23,7 +23,7 @@ data_num = ring_num*receiver_num
 
 arduino_port = "COM3"
 baud_rate = 115200
-webcam_ip_address = "10.4.125.93"
+webcam_ip_address = "10.4.44.60"
 webcam_port = "4747"
 webcam_url = f"http://{webcam_ip_address}:{webcam_port}/video"
 
@@ -337,7 +337,7 @@ class Generic_Hand_Model():
 
         self.models[finger].fit(x_train[:,magnet_value_indices[finger]],y_finger)
         predictions = self.models[finger].predict(x_test[:,magnet_value_indices[finger]])
-        predictions = np.hstack([predictions, predictions[:, [1]] * self.joint_ratios[self.fingers.index(finger)]]) if finger != "wrist" else predictions
+        predictions = np.hstack([predictions, predictions[:, [1]] * self.joint_ratios[self.fingers.index(finger)]]) if finger != "wrist" else predictions.reshape([-1,1])
         print(f"{finger} error: {np.abs(y_test[:,self.finger_angle_indices[finger]] - predictions).mean(axis=0)*rad2deg}")
         save_model(self.models[finger], f"{finger}")
 
@@ -362,8 +362,8 @@ class Generic_Hand_Model():
                     pass
                     
                 # print(prediction)
-            print(result)
-            print(result.shape)
+            # print(result)
+            # print(result.shape)
             result = np.hstack([result, prediction])
         return result
 
@@ -408,10 +408,8 @@ class VideoCapture:
 
 def get_arduino_values(ser:serial.Serial) -> np.ndarray:
     ser.write(b'R\n')
-    input = ser.read_until(b"\n").decode("utf-8").strip()
-    input = input.split()
-    input = list(map(int, input))
-    
+    input = ser.read(ring_num*receiver_num*2)
+    input = struct.unpack(f">{ring_num*receiver_num}H", input)
     return np.array(input)
 
 # def webcam_setup(flashlight=False, autofocus=False):
