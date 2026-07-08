@@ -164,6 +164,44 @@ def pack_serial_data(channel, pulse_width, frequency, leading_amplitude, lagging
                   
     return packed_data.to_bytes(4, byteorder='big')
 
+def pack_serial_data_multiground(channel, pulse_width, frequency, leading_amplitude, lagging_amplitude, signal_address, ground_address):
+    """
+    Packs 5 parameters into a 4-byte array for serial transmission.
+    
+    Bit layout (32 bits total):
+    [33:32] : ground_address (2 bits)
+    [31:29] : signal_address (3 bits)
+    [29:24] : lagging_amplitude (5 bits)
+    [23:18] : frequency (6 bits)
+    [17:8]  : pulse_width (10 bits)
+    [7:3]   : leading_amplitude (5 bits)
+    [2:0]   : channel (3 bits)
+    """
+
+    # 1. Mask inputs to ensure they strictly fit within their bit limits
+    channel &= 0x07             # 3 bits (max 7)
+    leading_amplitude &= 0x1F   # 5 bits (max 31)
+    pulse_width &= 0x3FF        # 10 bits (max 1023)
+    frequency &= 0x3F           # 6 bits (max 63)
+    lagging_amplitude &= 0x1F   # 5 bits (max 31)
+    signal_address &= 0x07      # 3 bits (max 7)
+    ground_address &= 0x03      # 2 bits (max 3)
+
+    packed_data = (channel) | \
+                  (leading_amplitude << 3) | \
+                  (pulse_width << 8) | \
+                  (frequency << 18) | \
+                  (lagging_amplitude << 24) | \
+                  (signal_address << 29) | \
+                  (ground_address << 32)
+    return packed_data.to_bytes(5, byteorder='big')
+
+def send_fes_command_multiground(ser, parameters):
+    command = pack_serial_data(*parameters)
+    ser.write(command)
+    return
+
+
 def send_preset(ser, parameters):
     for i in range(len(parameters)):
         command = pack_serial_data(i, parameters[i][0], parameters[i][1], parameters[i][2], parameters[i][3])
